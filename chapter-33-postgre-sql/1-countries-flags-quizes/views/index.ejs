@@ -1,3 +1,11 @@
 <%- include("partials/header") %>
-<h1>Hello world</h1>
+<div class="wrapper">
+    <h1>Flags quiz</h1>
+    <p>Score: <%= score %></p>
+    <p>Flag: <%= flag %></p>
+    <form action="/" method="POST">
+        <input type="text" placeholder="Type country name of the flag" name="answer"/>
+        <input type="submit" value="Send" />
+    </form>
+</div>
 <%- include("partials/footer") %>
