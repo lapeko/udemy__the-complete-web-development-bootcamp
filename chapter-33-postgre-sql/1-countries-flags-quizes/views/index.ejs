@@ -1,11 +1,17 @@
 <%- include("partials/header") %>
-<div class="wrapper">
-    <h1>Flags quiz</h1>
-    <p>Score: <%= score %></p>
-    <p>Flag: <%= flag %></p>
-    <form action="/" method="POST">
-        <input type="text" placeholder="Type country name of the flag" name="answer"/>
-        <input type="submit" value="Send" />
-    </form>
+<div class="page">
+    <div class="head">
+        <h1>Flags quiz</h1>
+        <p>Score: <%= score %></p>
+    </div>
+    <div class="content">
+        <div class="center">
+            Flag: <span class="flag"><%= flag %></span>
+        </div>
+        <form action="/" method="POST" class="center">
+            <input type="text" placeholder="Type country" name="answer"/>
+            <input type="submit" value="Send" />
+        </form>
+    </div>
 </div>
 <%- include("partials/footer") %>

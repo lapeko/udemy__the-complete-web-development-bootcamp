@@ -1,0 +1,38 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+html {
+    color: white;
+    font-family: sans-serif;
+    background-color: royalblue;
+}
+h1 {
+    font-family: serif;
+}
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+.head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 4rem;
+}
+.content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.flag {
+    font-size: 3rem;
+}
