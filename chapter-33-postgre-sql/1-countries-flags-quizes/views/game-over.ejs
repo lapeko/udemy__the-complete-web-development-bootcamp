@@ -1,0 +1,10 @@
+<%- include("partials/header") %>
+<% if (complete) { %>
+    <h2>Congratulations. You answered all the questions correctly</h2>
+<% } else { %>
+    <h2>Game over</h2>
+<% } %>
+    <form action="/" method="GET">
+        <input type="submit" value="Start new game" />
+    </form>
+<%- include("partials/footer") %>

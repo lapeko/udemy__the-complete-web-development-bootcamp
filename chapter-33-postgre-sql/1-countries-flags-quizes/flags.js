@@ -3,25 +3,12 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const {createClient} = require("redis");
 const {Client} = require("pg");
-const fs = require("fs");
 const { v4: uuid } = require("uuid");
 const dotenv = require("dotenv");
 
 dotenv.config();
 
 const PORT = process.env.APP_PORT || 3000;
-
-const data = fs.readFileSync("/Users/vitalilapeka/Desktop/learn_resources/flags.csv");
-const rows = data.toString().split("\r\n").slice(1);
-const values = rows.map(row => {
-  const regex = /"[^"]*"|[^,]+/g;
-  const values = row.match(regex);
-  return "(" + values.map(value => value.replace(/(^"|"$)/g, ''))
-    .slice(1)
-    .map(item => item.replaceAll("'", "''"))
-    .map(item => item.trim() ? "'" + item.trim() + "'" : "NULL")
-    .join(", ") + ")"
-}).join(", ") + ";";
 
 const pgClient = new Client({
   user: process.env.DB_USER,
@@ -40,7 +27,7 @@ const pgClient = new Client({
     .on("error", () => exitWithMessage("Redis connection failure."))
     .connect();
 
-  const res = await pgClient.query(`SELECT * FROM flags`);
+  const res = await pgClient.query("SELECT * FROM flags");
   if (!res.rows.length)
     exitWithMessage("The flags table is empty.");
 
@@ -54,22 +41,38 @@ const pgClient = new Client({
   app.use(express.static("public"));
 
   app.get("/", async (req, res) => {
-    if (req.cookies.id)
-      await redisClient.del(req.cookies.id);
-
     const id = uuid();
     const shuffledFlags = shuffleFlags(flags);
-    await redisClient.set(id, JSON.stringify({flags: shuffledFlags, score: 0}));
-    const firstFlag = shuffledFlags.pop();
+    const ttlMs = 24 * 60 * 60 * 1000;
+    await redisClient.set(id, JSON.stringify({flags: shuffledFlags, score: 0}), {PX: ttlMs});
+    const firstFlag = shuffledFlags.at(-1);
 
-    res.cookie('id', id, {maxAge: 24 * 60 * 60 * 1000, httpOnly: true});
+    res.cookie('id', id, {maxAge: ttlMs, httpOnly: true});
     res.render("index.ejs", {flag: firstFlag.flag, score: 0});
   });
 
-  app.post("/", (req, res) => {
-    console.log(req.body);
-    console.log(req.cookies.id);
-    res.render("index.ejs");
+  app.post("/", async (req, res) => {
+    const {answer} = req.body;
+    const {id} = req.cookies;
+
+    const userData = await redisClient.get(id);
+    if (!userData)
+      res.redirect("/");
+
+    let {score, flags} = JSON.parse(userData);
+
+    const correctAnswer = flags.pop().name;
+
+    if (correctAnswer.trim().toLowerCase() === answer.trim().toLowerCase()) {
+      score++;
+      if (!flags.length)
+        return res.render("game-over.ejs", {score, complete: true}); // TODO delete complete property and differentiate if user won based on provided correct answer which should not be provided in this case
+
+      await redisClient.set(id, JSON.stringify({score, flags}));
+      return res.render("index.ejs", {score, flag: flags.at(-1).flag});
+    }
+
+    res.render("game-over.ejs", {score, complete: false}); // TODO show the correct answer
   });
 
   app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
