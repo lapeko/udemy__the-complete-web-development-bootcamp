@@ -5,6 +5,7 @@ const {createClient} = require("redis");
 const {Client} = require("pg");
 const { v4: uuid } = require("uuid");
 const dotenv = require("dotenv");
+const {shuffleArray} = require("./utils/shuffle-array");
 
 dotenv.config();
 
@@ -42,13 +43,13 @@ const pgClient = new Client({
 
   app.get("/", async (req, res) => {
     const id = uuid();
-    const shuffledFlags = shuffleFlags(flags);
+    const shuffledFlags = shuffleArray(flags);
     const ttlMs = 24 * 60 * 60 * 1000;
     await redisClient.set(id, JSON.stringify({flags: shuffledFlags, score: 0}), {PX: ttlMs});
     const firstFlag = shuffledFlags.at(-1);
 
     res.cookie('id', id, {maxAge: ttlMs, httpOnly: true});
-    res.render("index.ejs", {flag: firstFlag.flag, score: 0});
+    res.render("flags.ejs", {flag: firstFlag.flag, score: 0});
   });
 
   app.post("/", async (req, res) => {
@@ -66,29 +67,20 @@ const pgClient = new Client({
     if (correctAnswer.trim().toLowerCase() === answer.trim().toLowerCase()) {
       score++;
       if (!flags.length)
-        return res.render("game-over.ejs", {score, complete: true}); // TODO delete complete property and differentiate if user won based on provided correct answer which should not be provided in this case
+        return res.render("game-over.ejs", {score});
 
       await redisClient.set(id, JSON.stringify({score, flags}));
-      return res.render("index.ejs", {score, flag: flags.at(-1).flag});
+      return res.render("flags.ejs", {score, flag: flags.at(-1).flag});
     }
 
-    res.render("game-over.ejs", {score, complete: false}); // TODO show the correct answer
+    res.render("game-over.ejs", {score, correctAnswer});
   });
 
   app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
 })();
 
-function shuffleFlags(flags) {
-  const shuffled = [...flags];
-  for (let i = 0; i < flags.length; i++) {
-    const randomIdx = Math.floor(Math.random() * flags.length);
-    [shuffled[i], shuffled[randomIdx]] = [shuffled[randomIdx], shuffled[i]];
-  }
-  return shuffled;
-}
-
 function exitWithMessage(message) {
   console.log(message);
-  console.log(" Terminating the app...");
+  console.log("Terminating the app...");
   process.exit();
 }

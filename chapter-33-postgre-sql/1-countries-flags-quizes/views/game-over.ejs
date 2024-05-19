@@ -1,8 +1,9 @@
 <%- include("partials/header") %>
-<% if (complete) { %>
-    <h2>Congratulations. You answered all the questions correctly</h2>
-<% } else { %>
+<% if (correctAnswer) { %>
     <h2>Game over</h2>
+    <div>Correct answer: "<%= correctAnswer %>"</div>
+<% } else { %>
+    <h2>Congratulations. You answered all the questions correctly</h2>
 <% } %>
     <form action="/" method="GET">
         <input type="submit" value="Start new game" />
